@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phát trực tiếp từ camera và ghi âm âm thanh</title>
+    <style>
+        #video-container {
+            width: 100%;
+            max-width: 800px;
+            margin: auto;
+            text-align: center;
+        }
+        video {
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="video-container">
+        <video id="video" autoplay></video>
+    </div>
+    <button onclick="batCameraVaGhiAm()">Bật camera và ghi âm</button>
+    <button onclick="dungCameraVaGhiAm()">Dừng</button>
+
+    <script>
+        var videoStream; // Biến lưu trữ video stream
+        var audioStream; // Biến lưu trữ audio stream
+        var mediaRecorder; // Biến lưu trữ đối tượng MediaRecorder
+
+        function batCameraVaGhiAm() {
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: true })
+                .then(function(stream) {
+                    var videoElement = document.getElementById('video');
+                    videoElement.srcObject = stream;
+                    videoElement.play(); // Bắt đầu phát video
+                    videoStream = stream; // Lưu trữ video stream
+
+                    audioStream = new MediaStream(); // Tạo một audio stream trống
+                    audioStream.addTrack(stream.getAudioTracks()[0]); // Thêm track âm thanh từ video stream
+
+                    mediaRecorder = new MediaRecorder(audioStream); // Tạo một MediaRecorder từ audio stream
+                    mediaRecorder.start(); // Bắt đầu ghi âm
+                })
+                .catch(function(err) {
+                    console.error('Lỗi khi truy cập camera hoặc microphone:', err);
+                });
+        }
+
+        function dungCameraVaGhiAm() {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop(); // Dừng ghi âm
+            }
+
+            if (videoStream) {
+                var tracks = videoStream.getTracks();
+                tracks.forEach(function(track) {
+                    track.stop(); // Dừng các track của video stream
+                });
+                videoStream = null; // Đặt lại video stream
+                var videoElement = document.getElementById('video');
+                videoElement.srcObject = null; // Loại bỏ video stream từ video element
+            }
+
+            if (audioStream) {
+                var audioTracks = audioStream.getTracks();
+                audioTracks.forEach(function(track) {
+                    track.stop(); // Dừng các track của audio stream
+                });
+                audioStream = null; // Đặt lại audio stream
+            }
+        }
+    </script>
+</body>
+</html>
